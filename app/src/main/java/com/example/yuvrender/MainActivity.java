@@ -8,8 +8,8 @@ import androidx.camera.core.ImageProxy;
 import androidx.lifecycle.LifecycleOwner;
 
 import android.media.Image;
+import android.opengl.GLSurfaceView;
 import android.os.Bundle;
-import android.util.Log;
 import android.util.Rational;
 
 import java.nio.ByteBuffer;
@@ -17,10 +17,17 @@ import java.nio.ByteBuffer;
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "Main";
 
+    private Render render;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+
+        GLSurfaceView glSurfaceView = new GLSurfaceView(this);
+        glSurfaceView.setEGLContextClientVersion(2);
+        render = new Render();
+        glSurfaceView.setRenderer(render);
+        setContentView(glSurfaceView);
 
         openCamera(this);
     }
@@ -28,7 +35,7 @@ public class MainActivity extends AppCompatActivity {
 
     private void openCamera(LifecycleOwner mLifecycleOwner) {
         ImageAnalysisConfig imageAnalysisConfig = new ImageAnalysisConfig.Builder()
-                .setLensFacing(CameraX.LensFacing.BACK)
+                .setLensFacing(CameraX.LensFacing.FRONT)
                 .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
                 .setTargetAspectRatio(new Rational(1, 1))
                 .build();
@@ -39,7 +46,7 @@ public class MainActivity extends AppCompatActivity {
         CameraX.bindToLifecycle(mLifecycleOwner, imageAnalysis);
     }
 
-    private static class PhotoAnalyzer implements ImageAnalysis.Analyzer {
+    private class PhotoAnalyzer implements ImageAnalysis.Analyzer {
 
         @Override
         public void analyze(ImageProxy imageProxy, int rotationDegrees) {
@@ -48,8 +55,14 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            byte[] data = getYUV420FromImage(image);
-            Log.d(TAG, "Receive image");
+            Image.Plane[] planes = image.getPlanes();
+            ByteBuffer yBuffer = planes[0].getBuffer();
+            ByteBuffer uBuffer = planes[1].getBuffer();
+            ByteBuffer vBuffer = planes[2].getBuffer();
+
+            MainActivity.this.render.setData(image.getWidth(), image.getHeight(), yBuffer, uBuffer, vBuffer);
+
+
         }
 
         private byte[] getYUV420FromImage(Image image) {
