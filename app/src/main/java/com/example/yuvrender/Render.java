@@ -98,16 +98,14 @@ public class Render implements GLSurfaceView.Renderer {
         vertexData = ByteBuffer
                 .allocateDirect(vertices.length * BYTES_PER_FLOAT)
                 .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-
-        vertexData.put(vertices);
+                .asFloatBuffer()
+                .put(vertices);
 
         textureData = ByteBuffer
                 .allocateDirect(textureVertices.length * BYTES_PER_FLOAT)
                 .order(ByteOrder.nativeOrder())
-                .asFloatBuffer();
-
-        textureData.put(textureVertices);
+                .asFloatBuffer()
+                .put(textureVertices);
     }
 
     @Override
@@ -156,17 +154,17 @@ public class Render implements GLSurfaceView.Renderer {
 
         if (width_yuv > 0 && height_yuv > 0) {
             //激活纹理0来绑定y数据
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE0);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIdYUV[0]);
-            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv / 2, height_yuv / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, y);
+            GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv, height_yuv, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, y);
 
             //激活纹理1来绑定u数据
             GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIdYUV[1]);
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv / 2, height_yuv / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, u);
 
-            //激活纹理2来绑定u数据
-            GLES20.glActiveTexture(GLES20.GL_TEXTURE1);
+            //激活纹理2来绑定v数据
+            GLES20.glActiveTexture(GLES20.GL_TEXTURE2);
             GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, textureIdYUV[2]);
             GLES20.glTexImage2D(GLES20.GL_TEXTURE_2D, 0, GLES20.GL_LUMINANCE, width_yuv / 2, height_yuv / 2, 0, GLES20.GL_LUMINANCE, GLES20.GL_UNSIGNED_BYTE, v);
 
@@ -174,11 +172,7 @@ public class Render implements GLSurfaceView.Renderer {
             GLES20.glUniform1i(samplerU, 1);
             GLES20.glUniform1i(samplerV, 2);
 
-            glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
-
-            y.clear();
-            u.clear();
-            v.clear();
+            glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
         }
     }
 

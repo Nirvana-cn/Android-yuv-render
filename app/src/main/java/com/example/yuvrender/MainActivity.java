@@ -55,14 +55,15 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            int width = image.getWidth();
+            int height = image.getHeight();
+
             Image.Plane[] planes = image.getPlanes();
             ByteBuffer yBuffer = planes[0].getBuffer();
             ByteBuffer uBuffer = planes[1].getBuffer();
             ByteBuffer vBuffer = planes[2].getBuffer();
 
-            MainActivity.this.render.setData(image.getWidth(), image.getHeight(), yBuffer, uBuffer, vBuffer);
-
-
+            MainActivity.this.render.setData(width, height, yBuffer, uBuffer, vBuffer);
         }
 
         private byte[] getYUV420FromImage(Image image) {
