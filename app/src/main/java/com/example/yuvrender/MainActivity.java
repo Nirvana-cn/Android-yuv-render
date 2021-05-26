@@ -55,49 +55,46 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            separateYUV(image);
+        }
+
+        private void separateYUV(Image image) {
             int width = image.getWidth();
             int height = image.getHeight();
 
             Image.Plane[] planes = image.getPlanes();
-            ByteBuffer yBuffer = planes[0].getBuffer();
-            ByteBuffer uBuffer = planes[1].getBuffer();
-            ByteBuffer vBuffer = planes[2].getBuffer();
+            // planes[0]必定是完整Y分量
+            ByteBuffer buffer1 = planes[0].getBuffer();
+            // planes[1]和planes[2]分别为U和V分量
+            ByteBuffer buffer2 = planes[1].getBuffer();
+            ByteBuffer buffer3 = planes[2].getBuffer();
 
-            MainActivity.this.render.setData(width, height, yBuffer, uBuffer, vBuffer);
-        }
+            int ySize = buffer1.remaining();
+            int uSize = buffer2.remaining();
 
-        private byte[] getYUV420FromImage(Image image) {
-            Image.Plane[] planes = image.getPlanes();
-            ByteBuffer yBuffer = planes[0].getBuffer();
-            ByteBuffer uBuffer = planes[1].getBuffer();
-            ByteBuffer vBuffer = planes[2].getBuffer();
+            // uv分量是y分量的1/4
+            byte[] uBytes = new byte[ySize / 4];
+            byte[] vBytes = new byte[ySize / 4];
 
-            int ySize = yBuffer.remaining();
-            int uSize = uBuffer.remaining();
-            int vSize = vBuffer.remaining();
+            // U和V分量应该为Y分量的1/4，YUV_420_888中Stride为2，造成uSize为ySize的一半
+            // 具体参考 https://www.polarxiong.com/archives/Android-Image%E7%B1%BB%E6%B5%85%E6%9E%90-%E7%BB%93%E5%90%88YUV_420_888.html
+            for (int i = 0, j = 0; i < uSize; i++) {
+                byte u = buffer2.get();
+                byte v = buffer3.get();
 
-            byte[] yuv420 = new byte[ySize * 3 / 2];
-            yBuffer.get(yuv420, 0, ySize);
-
-            int stride1 = planes[1].getPixelStride();
-            int stride2 = planes[2].getPixelStride();
-            if (stride1 == 1 && stride2 == 1) {
-                // YUV 420
-                uBuffer.get(yuv420, ySize, uSize);
-                vBuffer.get(yuv420, ySize + uSize, vSize);
-            } else if (stride1 == 2 && stride2 == 2) {
-                // YUV 422
-                int start = (int) ySize * 5 / 4;
-                for (int i = 0, j = 0; i < uSize; i++) {
-                    if (i % 2 == 0) {
-                        yuv420[ySize + j] = uBuffer.get(i);
-                        yuv420[start + j] = vBuffer.get(i);
-                        j++;
-                    }
+                if (i % 2 == 0) {
+                    uBytes[j] = u;
+                    vBytes[j] = v;
+                    j++;
                 }
             }
 
-            return yuv420;
+            ByteBuffer uByteBuffer = ByteBuffer.wrap(uBytes);
+            ByteBuffer vByteBuffer = ByteBuffer.wrap(vBytes);
+
+            MainActivity.this.render.setData(width, height, buffer1, uByteBuffer, vByteBuffer);
+
+            image.close();
         }
     }
 
